@@ -117,7 +117,7 @@
 
 // export default EmployeeTable1;
 import React, { useState, useEffect } from 'react';
-import { Grid, IconButton, Checkbox, InputLabel, MenuItem, Select, TextField, FormControlLabel } from '@material-ui/core';
+import { Grid, IconButton, Checkbox, InputLabel, MenuItem, Select, TextField, FormControlLabel, Button, Dialog, DialogTitle, DialogContent, DialogActions, } from '@material-ui/core';
 // import Typography from '@material-ui/core/Typography';
 // import { ExpandMore, ExpandLess } from '@material-ui/icons';
 import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Close as CloseIcon } from '@material-ui/icons';
@@ -125,12 +125,26 @@ import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import axios from 'axios';
-
+import "../employeeTable/table.css";
 
 
 function EmployeeTable1() {
   const [rowData, setRowData] = useState([]);
   const [newEmployee, setNewEmployee] = useState({});
+  const [employeeAdded, setEmployeeAdded] = useState(false);
+  const [addEmployeeVisability, setAddEmployeeVisability] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+ 
+
+  const showDialog = () => {
+    setAddEmployeeVisability(true);
+    setEmployeeAdded(false);
+  };
+
+  const hideDialog = () => {
+    setAddEmployeeVisability(false);
+    setAddEmployeeVisability(false);
+  };
 
   useEffect(() => {
     fetchData();
@@ -157,6 +171,15 @@ function EmployeeTable1() {
       await axios.post('http://localhost:5000/saveEmployee', newEmployee);
       fetchData();
       setNewEmployee({});
+      setEmployeeAdded(true);
+      setAddEmployeeVisability(false);
+      setShowNotification(true);
+
+      setShowNotification(true);
+      setTimeout(() => {
+        setShowNotification(false);
+      }, 2000);
+    
     } catch (error) {
       console.error('Error adding employee:', error);
     }
@@ -277,7 +300,9 @@ function EmployeeTable1() {
     actionsCellRenderer: ActionsCellRenderer,
   };
   return (
+    
     <Grid container>
+       
       <Grid item xs={12}>
         <div className="ag-theme-material" style={{ height: '500px', width: '100%' }}>
           <AgGridReact
@@ -289,32 +314,42 @@ function EmployeeTable1() {
         </div>
       </Grid>
 
-      <Grid item xs={12}>
-        <input
+      <Button variant="contained" color="primary" onClick={showDialog}>
+       Add A New Employee
+      </Button>
+
+      <Dialog open={addEmployeeVisability} onClose={hideDialog}>
+        <DialogTitle>Dialog Title</DialogTitle>
+        <DialogContent>
+        <Grid item xs={12} className='grid-container'>
+        <TextField
           type="text"
           name="employeeID"
-          placeholder="Employee ID"
+          label="Employee ID"
           value={newEmployee.employeeID || ''}
           onChange={handleInputChange}
+          required
         />
-        <input
+        <TextField
           type="text"
           name="employeeFirstName"
-          placeholder="Employee First Name"
+          label="Employee First Name"
           value={newEmployee.employeeFirstName || ''}
           onChange={handleInputChange}
+          required
         />
-        <input
+        <TextField
           type="text"
           name="employeeLastName"
-          placeholder="Employee Last Name"
+          label="Employee Last Name"
           value={newEmployee.employeeLastName || ''}
           onChange={handleInputChange}
+          required
         />
-        <input
+        <TextField
           type="text"
           name="address"
-          placeholder="Address"
+          label="Address"
           value={newEmployee.address || ''}
           onChange={handleInputChange}
         />
@@ -322,8 +357,14 @@ function EmployeeTable1() {
           type="tel"
           name="phoneNumber"
           label="Phone Number"
-          value={newEmployee.phoneNumber || ''}
+          pattern="[0-9]{10}"
+          value={newEmployee.phoneNumber}
           onChange={handleInputChange}
+          inputProps={{
+            pattern: "[0-9]{10}", // Regular expression for 10-digit phone number
+            title: 'Please enter a valid 10-digit phone number',
+          }}
+          required
         />
         <TextField
           type="email"
@@ -331,13 +372,15 @@ function EmployeeTable1() {
           label="Email"
           value={newEmployee.email || ''}
           onChange={handleInputChange}
+          required
         />
         <FormControlLabel
           control={
             <Checkbox
               name="isActive"
-              checked={newEmployee.isActive || false}
+              checked={newEmployee.isActive || ''}
               onChange={handleInputChange}
+              required
             />
           }
           label="Active Status"
@@ -347,13 +390,32 @@ function EmployeeTable1() {
           name="employementType"
           value={newEmployee.employementType || ''}
           onChange={handleInputChange}
+          required
         >
           <MenuItem value="Full-Time">Full-time</MenuItem>
           <MenuItem value="Part-Time">Part-time</MenuItem>
           <MenuItem value="Temporary">Temporary</MenuItem>
         </Select>
-        <button onClick={addEmployee}>Add Employee</button>
+      
       </Grid>
+        </DialogContent>
+        <DialogActions>
+        <Button onClick={addEmployee} color="primary">
+           Add Employee
+          </Button>
+         
+          <Button onClick={hideDialog} color="primary">
+            Cancel
+          </Button>
+          
+        </DialogActions>
+      </Dialog>
+      {showNotification && (
+        <div className="notification">
+          Employee added successfully!
+        </div>
+      )}
+
     </Grid>
   );
 }
