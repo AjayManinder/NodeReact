@@ -4,7 +4,7 @@ frontend:
     # IMPORTANT - Please verify your build commands
     build:
       commands: [
-        npm start
+       
       ]
   artifacts:
     # IMPORTANT - Please verify your build output directory
