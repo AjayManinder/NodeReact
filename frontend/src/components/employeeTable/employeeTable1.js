@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, IconButton,  Button} from '@material-ui/core';
-// import Typography from '@material-ui/core/Typography';
-// import { ExpandMore, ExpandLess } from '@material-ui/icons';
-import { Edit as EditIcon, Delete as DeleteIcon, Check as CheckIcon, Close as CloseIcon } from '@material-ui/icons';
+import { Grid, IconButton, Button,} from '@material-ui/core';
+import { Edit as EditIcon, Delete as DeleteIcon} from '@material-ui/icons';
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import axios from 'axios';
 import "../employeeTable/table.css";
 import AddEmployeeDialog from './addEmployee';
+import EditEmployeeDialog from './editEmployee';
 
 function EmployeeTable1() {
   const [rowData, setRowData] = useState([]);
   const [newEmployee, setNewEmployee] = useState({});
   const [employeeAdded, setEmployeeAdded] = useState(false);
-  const [addEmployeeVisability, setAddEmployeeVisability] = useState(false);
+  const [addEmployeeVisibility, setAddEmployeeVisibility] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
- 
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editedEmployee, setEditedEmployee] = useState({});
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
 
   const showDialog = () => {
-    setAddEmployeeVisability(true);
+    setAddEmployeeVisibility(true);
     setEmployeeAdded(false);
   };
 
   const hideDialog = () => {
-    setAddEmployeeVisability(false);
-    setAddEmployeeVisability(false);
+    setAddEmployeeVisibility(false);
+    setEmployeeAdded(false);
   };
 
   useEffect(() => {
@@ -41,7 +42,6 @@ function EmployeeTable1() {
     }
   };
 
-
   const handleInputChange = (e) => {
     const { name, value, checked } = e.target;
     const inputValue = e.target.type === 'checkbox' ? checked : value;
@@ -54,14 +54,12 @@ function EmployeeTable1() {
       fetchData();
       setNewEmployee({});
       setEmployeeAdded(true);
-      setAddEmployeeVisability(false);
+      setAddEmployeeVisibility(false);
       setShowNotification(true);
 
-      setShowNotification(true);
       setTimeout(() => {
         setShowNotification(false);
       }, 2000);
-    
     } catch (error) {
       console.error('Error adding employee:', error);
     }
@@ -80,15 +78,32 @@ function EmployeeTable1() {
     try {
       await axios.put(`http://localhost:5000/fetchEmployees/${employeeData._id}`, employeeData);
       fetchData();
+      setEditDialogOpen(false);
+      setEditedEmployee({});
     } catch (error) {
       console.error('Error updating employee:', error);
     }
   };
-  
+
+  const openEditDialog = (employeeId) => {
+    const selectedEmployee = rowData.find((employee) => employee._id === employeeId);
+    setEditedEmployee(selectedEmployee);
+    setSelectedEmployeeId(employeeId);
+    setEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditedEmployee({});
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value, checked } = e.target;
+    const inputValue = e.target.type === 'checkbox' ? checked : value;
+    setEditedEmployee((prevEmployee) => ({ ...prevEmployee, [name]: inputValue }));
+  };
+
   const ActionsCellRenderer = ({ data }) => {
-    const [editMode, setEditMode] = useState(false);
-    const [editedEmployee, setEditedEmployee] = useState({});
-  
     const handleDelete = async () => {
       try {
         await deleteEmployee(data._id);
@@ -96,72 +111,22 @@ function EmployeeTable1() {
         console.error('Error deleting employee:', error);
       }
     };
-  
+
     const handleEdit = () => {
-      setEditMode(true);
-      setEditedEmployee({ ...data });
+      openEditDialog(data._id);
     };
-  
-    const handleCancel = () => {
-      setEditMode(false);
-      setEditedEmployee({});
-    };
-  
-    const handleInputChange = (e) => {
-      const { name, value, checked } = e.target;
-      const inputValue = e.target.type === 'checkbox' ? checked : value;
-      setEditedEmployee((prevEmployee) => ({ ...prevEmployee, [name]: inputValue }));
-    };
-  
-    const handleUpdate = async () => {
-      try {
-        await updateEmployee(editedEmployee);
-        setEditMode(false);
-        setEditedEmployee({});
-      } catch (error) {
-        console.error('Error updating employee:', error);
-      }
-    };
-  
-    
-  if (editMode) {
+
     return (
       <div>
         <IconButton onClick={handleDelete} size="small">
           <DeleteIcon />
         </IconButton>
-        <IconButton onClick={handleUpdate} size="small">
-          <CheckIcon />
+        <IconButton onClick={handleEdit} size="small">
+          <EditIcon />
         </IconButton>
-        <IconButton onClick={handleCancel} size="small">
-          <CloseIcon />
-        </IconButton>
-        <form>
-          <input
-            type="text"
-            name="employeeID"
-            placeholder="Employee ID"
-            value={editedEmployee.employeeID || ''}
-            onChange={handleInputChange}
-          />
-          {/* Rest of the input fields */}
-        </form>
       </div>
     );
-  }
-  
-    
-  return (
-    <div>
-      <IconButton onClick={handleDelete} size="small">
-        <DeleteIcon />
-      </IconButton>
-      <IconButton onClick={handleEdit} size="small">
-        <EditIcon />
-      </IconButton>
-    </div>
-  );
-};
+  };
 
   const columnDefs = [
     { field: 'employeeID', headerName: 'Employee ID', sortable: true },
@@ -177,14 +142,17 @@ function EmployeeTable1() {
   const onRowDataChanged = (params) => {
     params.api.sizeColumnsToFit();
   };
+
   const frameworkComponents = {
     actionsCellRenderer: ActionsCellRenderer,
   };
-  
+
+  const handleUpdateEmployee = () => {
+    updateEmployee(editedEmployee);
+  };
+
   return (
-    
     <Grid container>
-       
       <Grid item xs={12}>
         <div className="ag-theme-material" style={{ height: '500px', width: '100%' }}>
           <AgGridReact
@@ -192,31 +160,34 @@ function EmployeeTable1() {
             rowData={rowData}
             frameworkComponents={frameworkComponents}
             onRowDataChanged={onRowDataChanged}
-
           />
         </div>
       </Grid>
 
       <Button variant="contained" color="primary" onClick={showDialog}>
-       Add A New Employee
+        Add A New Employee
       </Button>
 
       <AddEmployeeDialog
-        open={addEmployeeVisability}
+        open={addEmployeeVisibility}
         handleClose={hideDialog}
         handleInputChange={handleInputChange}
         handleAddEmployee={addEmployee}
         newEmployee={newEmployee}
       />
-      {showNotification && (
-        <div className="notification">
-          Employee added successfully!
-        </div>
-      )}
 
+      <EditEmployeeDialog
+        editDialogOpen={editDialogOpen}
+        closeEditDialog={closeEditDialog}
+        handleEditInputChange={handleEditInputChange}
+        handleUpdateEmployee={handleUpdateEmployee}
+        editedEmployee={editedEmployee}
+      />
+
+
+      {showNotification && <div className="notification">Employee added successfully!</div>}
     </Grid>
   );
 }
 
 export default EmployeeTable1;
-
