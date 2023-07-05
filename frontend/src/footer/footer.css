@@ -1,0 +1,23 @@
+.Footer_Container{
+    width: 100%;
+    height: 25px;
+    background-color: rgb(215, 218, 230);
+    position: absolute;
+    bottom:0;
+    background-image: url("https://i.pinimg.com/originals/33/8e/de/338ede5f9f949b9c4cc6c1c0c15c6a00.jpg");
+    opacity: 0.8;
+}
+
+.Inner_Footer_Container{
+    display: flex;
+    padding: 1px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+.Footer_Heading{
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    color: rgb(255, 255, 255);
+}
